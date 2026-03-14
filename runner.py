@@ -318,9 +318,10 @@ class RRAGRunner:
             res.append(cur_res)
         if self.save_results:
             save_pkl_file = f'res_' + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            if not os.path.exists('output'):
-                os.makedirs('output')
-            pkl_save_path = f'output/{save_pkl_file}.pkl'
+            result_dir = self.output_dir if self.output_dir else 'output'
+            if not os.path.exists(result_dir):
+                os.makedirs(result_dir)
+            pkl_save_path = os.path.join(result_dir, f'{save_pkl_file}.pkl')
             print('results_save_path', pkl_save_path)
             with open(pkl_save_path, 'wb') as f:
                 pickle.dump(res, f)
