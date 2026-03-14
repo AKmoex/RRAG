@@ -32,6 +32,9 @@ class RAGLlamaForCausalLM(PreTrainedModel):
             device_map="auto",
             load_in_8bit=config.load_in_8bit,
             )
+        self.is_loaded_in_8bit = bool(config.load_in_8bit)
+        self.is_parallelizable = True
+        self.model_parallel = True
         if config.freeze_llm:
             for name, param in self.llama_model.named_parameters():
                 param.requires_grad = False

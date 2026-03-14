@@ -94,7 +94,7 @@ def main(dataset_name, input_path, train_data_path, test_data_path, model_name, 
         test_samples = get_dual_dev(examples, test_index)
 
         dev_evaluator = RerankingEvaluator(test_samples, batch_size=32, show_progress_bar=True)
-        r = dev_evaluator(model, output_path) 
+        r = dev_evaluator(model, output_path)
 
         dataset = get_dual_sim(examples, all_index, model)
         with open(save_path, 'wb') as fin:

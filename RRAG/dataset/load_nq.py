@@ -134,7 +134,7 @@ def load_nq_data(input_path, dataset_seed=42):
     return examples, train_index, test_index
 
 
-def load_nq_dataset(input_path, max_prompt_length, tokenizer, retrieval_aware, use_cot, RETRIEVAL_TOKEN='<R>', dataset_seed=42):
+def load_nq_dataset(input_path, max_prompt_length, tokenizer, retrieval_aware, use_cot=False, RETRIEVAL_TOKEN='<R>', dataset_seed=42):
     examples, train_index, test_index = load_nq_data(input_path, dataset_seed)
     instruction_dataset_train = get_instruction_dataset(examples, train_index, max_prompt_length, tokenizer, retrieval_aware, use_cot, RETRIEVAL_TOKEN)
     instruction_dataset_test = get_instruction_dataset(examples, test_index, max_prompt_length, tokenizer, retrieval_aware, use_cot, RETRIEVAL_TOKEN)

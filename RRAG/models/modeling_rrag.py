@@ -78,6 +78,10 @@ class RRAGLlamaForCausalLM(PreTrainedModel):
             device_map="auto",
             load_in_8bit=config.load_in_8bit,
             )
+        # Mark as model-parallel + kbit model so HF Trainer won't wrap with DataParallel.
+        self.is_loaded_in_8bit = bool(config.load_in_8bit)
+        self.is_parallelizable = True
+        self.model_parallel = True
         if config.freeze_llm:
             print('freeze_llm')
             for name, param in self.llama_model.named_parameters():
@@ -196,6 +200,9 @@ class RRAGLlamaForCausalLM(PreTrainedModel):
         llama_model_class = AutoModelForCausalLM.from_pretrained
         llama_model = llama_model_class(llm_path, device_map="auto", load_in_8bit=config.load_in_8bit)
         model.llama_model = llama_model
+        model.is_loaded_in_8bit = bool(config.load_in_8bit)
+        model.is_parallelizable = True
+        model.model_parallel = True
         
         model_path = os.path.join(pretrained_model_path, 'RRAGLlama_pytorch_model.bin')
         other_model_dict = torch.load(model_path)

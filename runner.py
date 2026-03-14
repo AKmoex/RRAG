@@ -1,20 +1,20 @@
 import torch
 import numpy as np
 import random, os
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
-print(torch.cuda.is_available())
+
+
 def seed_it(seed):
     os.environ["PYTHONSEED"] = str(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     random.seed(seed)
     np.random.seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.enabled = True
     torch.manual_seed(seed)
-seed_it(42)
 
 
 from tqdm import tqdm
@@ -73,6 +73,7 @@ class RRAGRunner:
         beam_num=5,
         save_results=False,
         instruction_type='instruction',
+        cuda_visible_devices=None,
     ):
         self.dataset_name = dataset_name # 
         self.input_path = input_path
@@ -106,6 +107,7 @@ class RRAGRunner:
         self.use_beam = use_beam
         self.beam_num = beam_num
         self.save_results = save_results
+        self.cuda_visible_devices = cuda_visible_devices
 
     @classmethod
     def set_unk_token(cls, token):
@@ -206,6 +208,7 @@ class RRAGRunner:
             self.model = RAGLlamaForCausalLM(config)
         print(config)
         print(self.model)
+        self.primary_device = next(self.model.parameters()).device
     
     def get_peft_model(self):
         peft_config = LoraConfig(
@@ -242,6 +245,10 @@ class RRAGRunner:
             lr_scheduler_type="constant",
             # disable_tqdm=True # disable tqdm since with packing values are in correct
         )
+        if getattr(self.model, "model_parallel", False) and torch.cuda.device_count() > 1:
+            # Keep single-process model-parallel and avoid Trainer DataParallel wrapper.
+            args._n_gpu = 1
+            print("Detected model_parallel=True. Force TrainingArguments._n_gpu=1 to disable DataParallel.")
         dataset_train = Dataset.from_list(self.instruction_dataset_train[:])
         peft_config = self.get_peft_model() if self.use_lora else None
         max_seq_length = self.max_prompt_length
@@ -274,7 +281,7 @@ class RRAGRunner:
                     truncation=True,
                     max_length=self.max_prompt_length,
                     add_special_tokens=False,
-                ).to('cuda')
+                ).to(self.primary_device)
         if self.use_rrag:
             embeds = torch.tensor(sample['embeds']).to(input_tokens.input_ids.device)
             label = torch.tensor(sample['label']).to(input_tokens.input_ids.device)
@@ -336,7 +343,15 @@ class RRAGRunner:
         if self.use_evaluation:
             self.eval()
 
-def main(dataset_name, input_path, train_data_path, test_data_path, **args):
+def main(dataset_name, input_path, train_data_path, test_data_path, cuda_visible_devices=None, **args):
+    if cuda_visible_devices:
+        os.environ["CUDA_VISIBLE_DEVICES"] = cuda_visible_devices
+    print("CUDA_VISIBLE_DEVICES =", os.environ.get("CUDA_VISIBLE_DEVICES", "<not set>"))
+    print("cuda available:", torch.cuda.is_available())
+    if torch.cuda.is_available():
+        print("visible gpu count:", torch.cuda.device_count())
+    seed_it(42)
+
     if dataset_name in ['hotpotqa', 'musique', '2wiki']:
         input_path = {'train_data_path': train_data_path, 'test_data_path': test_data_path}
     print(args)
@@ -383,6 +398,7 @@ if __name__ == "__main__":
     parser.add_argument('--beam_num', type=int, default=5, help='Number of beams in beam search')
     parser.add_argument('--save_results', action='store_true', help='Save results')
     parser.add_argument('--instruction_type', default='instruction', choices=['chat', 'instruction'], help='instruction_type, llama or mistral')
+    parser.add_argument('--cuda_visible_devices', type=str, default=None, help='Visible GPU ids, e.g. "0,1". If not set, use current environment setting.')
 
     args = parser.parse_args()
     main(**vars(args))
