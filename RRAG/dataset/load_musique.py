@@ -84,14 +84,21 @@ def get_instruction_dataset(dataset, max_prompt_length, tokenizer, retrieval_awa
             instruction_dataset.append(data)
     return instruction_dataset
 
-def get_embeds(dataset):
+def get_embeds(dataset, use_all_doc_avg_feature=False):
     for data in dataset:
-        data['embeds'] = [[
-            float(d['rerank_score']),
-            float(d['rerank_nb_score']),
-            float(d['rerank_precedent_score']),
-            float(d.get('rerank_all_doc_avg_score', 0.0)),
-        ] for d in data['paragraphs']]
+        if use_all_doc_avg_feature:
+            data['embeds'] = [[
+                float(d['rerank_score']),
+                float(d['rerank_nb_score']),
+                float(d['rerank_precedent_score']),
+                float(d.get('rerank_all_doc_avg_score', 0.0)),
+            ] for d in data['paragraphs']]
+        else:
+            data['embeds'] = [[
+                float(d['rerank_score']),
+                float(d['rerank_nb_score']),
+                float(d['rerank_precedent_score']),
+            ] for d in data['paragraphs']]
         data['label'] = [1 if d['is_supporting'] else 0 for d in data['paragraphs']]
     return dataset
 
@@ -108,15 +115,14 @@ def load_musique_data(input_path):
     return train_data, test_data
 
 
-def load_musique_dataset(input_path, max_prompt_length, tokenizer, retrieval_aware, use_cot=False, RETRIEVAL_TOKEN='<R>'):
+def load_musique_dataset(input_path, max_prompt_length, tokenizer, retrieval_aware, use_cot=False, RETRIEVAL_TOKEN='<R>', use_all_doc_avg_feature=False):
     train_data, test_data = load_musique_data(input_path)
     instruction_dataset_train = get_instruction_dataset(train_data[:], max_prompt_length, tokenizer, retrieval_aware, use_cot, RETRIEVAL_TOKEN)
     instruction_dataset_test = get_instruction_dataset(test_data[:], max_prompt_length, tokenizer, retrieval_aware, use_cot, RETRIEVAL_TOKEN)
 
-    instruction_dataset_train = get_embeds(instruction_dataset_train)
-    instruction_dataset_test = get_embeds(instruction_dataset_test)
+    instruction_dataset_train = get_embeds(instruction_dataset_train, use_all_doc_avg_feature=use_all_doc_avg_feature)
+    instruction_dataset_test = get_embeds(instruction_dataset_test, use_all_doc_avg_feature=use_all_doc_avg_feature)
     return instruction_dataset_train, instruction_dataset_test
 
 def get_musique_ans(dataset):
     return [[data['answer']]+data['answer_aliases'] for data in dataset]
-

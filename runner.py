@@ -52,7 +52,8 @@ class RRAGRunner:
         output_dir='',
 
         use_rrag=True,
-        input_dim=4,
+        input_dim=3,
+        use_all_doc_avg_feature=False,
         hidden_size=4096,
         RETRIEVAL_TOKEN='<R>',
         UNK_TOKEN='<unk>',
@@ -86,7 +87,11 @@ class RRAGRunner:
 
         self.use_rrag = use_rrag
         self.retrieval_aware = use_rrag
-        self.input_dim = input_dim
+        self.use_all_doc_avg_feature = use_all_doc_avg_feature
+        expected_input_dim = 4 if self.use_all_doc_avg_feature else 3
+        if input_dim != expected_input_dim:
+            print(f'Override input_dim from {input_dim} to {expected_input_dim} (use_all_doc_avg_feature={self.use_all_doc_avg_feature})')
+        self.input_dim = expected_input_dim
         self.hidden_size = hidden_size
         RRAGRunner.set_retrieval_token(RETRIEVAL_TOKEN)
         RRAGRunner.set_unk_token(UNK_TOKEN)
@@ -179,7 +184,14 @@ class RRAGRunner:
             _load_dataset = load_hotpotqa_dataset
         elif self.dataset_name == 'musique':
             _load_dataset = load_musique_dataset
-        self.instruction_dataset_train, self.instruction_dataset_test = _load_dataset(self.input_path, self.max_prompt_length, self.tokenizer, retrieval_aware=self.retrieval_aware, RETRIEVAL_TOKEN=self.RETRIEVAL_TOKEN)
+        self.instruction_dataset_train, self.instruction_dataset_test = _load_dataset(
+            self.input_path,
+            self.max_prompt_length,
+            self.tokenizer,
+            retrieval_aware=self.retrieval_aware,
+            RETRIEVAL_TOKEN=self.RETRIEVAL_TOKEN,
+            use_all_doc_avg_feature=self.use_all_doc_avg_feature,
+        )
     
     def load_model(self):
         print('##############################  load_model  ##############################')
@@ -378,7 +390,8 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', type=str, required=False, help='Directory to save model')
 
     parser.add_argument('--use_rrag', action='store_true', help='Whether to use RRAG or not')
-    parser.add_argument('--input_dim', type=int, default=4, help='Input features')
+    parser.add_argument('--input_dim', type=int, default=3, help='Input features (auto-overridden to 4 when --use_all_doc_avg_feature is set)')
+    parser.add_argument('--use_all_doc_avg_feature', action='store_true', help='Use rerank_all_doc_avg_score as the 4th retrieval feature')
     parser.add_argument('--hidden_size', type=int, default=4096, help='Size of the LLM hidden layer')
     parser.add_argument('--RETRIEVAL_TOKEN', type=str, default='<R>', help='Token for retrieval')
     parser.add_argument('--UNK_TOKEN', type=str, default='<unk>', help='Token for unknown tokens')

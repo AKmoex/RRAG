@@ -12,7 +12,7 @@ class RRAGLlamaConfig(PretrainedConfig):
         self,
         model_name_or_path='',
         load_in_8bit=True,
-        input_dim=4,
+        input_dim=3,
         hidden_size=4096,
         unk_token='<unk>',
         unk_token_id=0,

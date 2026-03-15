@@ -81,7 +81,7 @@ def load_data_jsonl(input_path, dataset_seed=42):
     return train_data, test_data
 
 ##### Feature Extration and Save
-def main(dataset_name, input_path, train_data_path, test_data_path, model_name, save_path, save_train_path, save_test_path, output_path):
+def main(dataset_name, input_path, train_data_path, test_data_path, model_name, save_path, save_train_path, save_test_path, output_path, use_all_doc_avg_feature=False):
     ##### Load Retriever
     model = SentenceTransformer(model_name)
     if not os.path.exists(output_path):
@@ -96,7 +96,7 @@ def main(dataset_name, input_path, train_data_path, test_data_path, model_name, 
         dev_evaluator = RerankingEvaluator(test_samples, batch_size=32, show_progress_bar=True)
         r = dev_evaluator(model, output_path)
 
-        dataset = get_dual_sim(examples, all_index, model)
+        dataset = get_dual_sim(examples, all_index, model, use_all_doc_avg_feature=use_all_doc_avg_feature)
         with open(save_path, 'wb') as fin:
             pickle.dump(dataset, fin)
             fin.close()
@@ -109,8 +109,8 @@ def main(dataset_name, input_path, train_data_path, test_data_path, model_name, 
         dev_evaluator = RerankingEvaluator(test_samples, batch_size=32, show_progress_bar=True)
         r = dev_evaluator(model, output_path) 
 
-        dataset = get_dual_sim_hotpotqa(train_data, model)
-        dataset_test = get_dual_sim_hotpotqa(test_data, model)
+        dataset = get_dual_sim_hotpotqa(train_data, model, use_all_doc_avg_feature=use_all_doc_avg_feature)
+        dataset_test = get_dual_sim_hotpotqa(test_data, model, use_all_doc_avg_feature=use_all_doc_avg_feature)
         with open(save_train_path, 'wb') as fin:
             pickle.dump(dataset, fin)
             fin.close()
@@ -126,8 +126,8 @@ def main(dataset_name, input_path, train_data_path, test_data_path, model_name, 
         dev_evaluator = RerankingEvaluator(test_samples, batch_size=32, show_progress_bar=True)
         r = dev_evaluator(model, output_path) 
 
-        dataset = get_dual_sim_musique(train_data, model)
-        dataset_test = get_dual_sim_musique(test_data, model)
+        dataset = get_dual_sim_musique(train_data, model, use_all_doc_avg_feature=use_all_doc_avg_feature)
+        dataset_test = get_dual_sim_musique(test_data, model, use_all_doc_avg_feature=use_all_doc_avg_feature)
         with open(save_train_path, 'wb') as fin:
             pickle.dump(dataset, fin)
             fin.close()
@@ -148,7 +148,8 @@ if __name__ == "__main__":
     parser.add_argument('--save_train_path', type=str, required=False, help='Path to save train dataset')
     parser.add_argument('--save_test_path', type=str, required=False, help='Path to save test dataset')
     parser.add_argument('--output_path', type=str, required=False, default='temp_result', help='Path to save the evluation results')
+    parser.add_argument('--use_all_doc_avg_feature', action='store_true', help='Include average similarity with all other documents as an extra retrieval feature')
     args = parser.parse_args()
 
-    main(args.dataset_name, args.input_path, args.train_data_path, args.test_data_path, args.model_name, args.save_path, args.save_train_path, args.save_test_path, args.output_path)
+    main(args.dataset_name, args.input_path, args.train_data_path, args.test_data_path, args.model_name, args.save_path, args.save_train_path, args.save_test_path, args.output_path, args.use_all_doc_avg_feature)
     

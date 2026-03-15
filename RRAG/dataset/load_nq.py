@@ -118,14 +118,21 @@ def get_instruction_dataset(dataset, idx, max_prompt_length, tokenizer, retrieva
             instruction_dataset.append(data)
     return instruction_dataset
 
-def get_embeds(dataset):
+def get_embeds(dataset, use_all_doc_avg_feature=False):
     for data in dataset:
-        data['embeds'] = [[
-            float(d['rerank_score']),
-            float(d['rerank_nb_score']),
-            float(d['rerank_precedent_score']),
-            float(d.get('rerank_all_doc_avg_score', 0.0)),
-        ] for d in data['ctxs']]
+        if use_all_doc_avg_feature:
+            data['embeds'] = [[
+                float(d['rerank_score']),
+                float(d['rerank_nb_score']),
+                float(d['rerank_precedent_score']),
+                float(d.get('rerank_all_doc_avg_score', 0.0)),
+            ] for d in data['ctxs']]
+        else:
+            data['embeds'] = [[
+                float(d['rerank_score']),
+                float(d['rerank_nb_score']),
+                float(d['rerank_precedent_score']),
+            ] for d in data['ctxs']]
         data['label'] = [1 if d['isgold'] else 0 for d in data['ctxs']]
     return dataset
 
@@ -142,15 +149,14 @@ def load_nq_data(input_path, dataset_seed=42):
     return examples, train_index, test_index
 
 
-def load_nq_dataset(input_path, max_prompt_length, tokenizer, retrieval_aware, use_cot=False, RETRIEVAL_TOKEN='<R>', dataset_seed=42):
+def load_nq_dataset(input_path, max_prompt_length, tokenizer, retrieval_aware, use_cot=False, RETRIEVAL_TOKEN='<R>', dataset_seed=42, use_all_doc_avg_feature=False):
     examples, train_index, test_index = load_nq_data(input_path, dataset_seed)
     instruction_dataset_train = get_instruction_dataset(examples, train_index, max_prompt_length, tokenizer, retrieval_aware, use_cot, RETRIEVAL_TOKEN)
     instruction_dataset_test = get_instruction_dataset(examples, test_index, max_prompt_length, tokenizer, retrieval_aware, use_cot, RETRIEVAL_TOKEN)
 
-    instruction_dataset_train = get_embeds(instruction_dataset_train)
-    instruction_dataset_test = get_embeds(instruction_dataset_test)
+    instruction_dataset_train = get_embeds(instruction_dataset_train, use_all_doc_avg_feature=use_all_doc_avg_feature)
+    instruction_dataset_test = get_embeds(instruction_dataset_test, use_all_doc_avg_feature=use_all_doc_avg_feature)
     return instruction_dataset_train, instruction_dataset_test
 
 def get_nq_ans(dataset):
     return [data['answers'] for data in dataset]
-
