@@ -29,6 +29,21 @@ def get_nb_sim(c_emb, rank_list):
     nb_sim = [s.squeeze() for s in nb_sim]
     return nb_sim
 
+def get_all_doc_avg_sim(c_emb, rank_list):
+    rank_emb = [c_emb[i] for i in rank_list]
+    if len(rank_emb) <= 1:
+        return [torch.tensor(1.0, device='cpu')]
+    avg_sim = []
+    for i in range(len(rank_emb)):
+        cur_emb = rank_emb[i].reshape(1, -1)
+        other_scores = []
+        for j in range(len(rank_emb)):
+            if i == j:
+                continue
+            other_scores.append(cos_sim(cur_emb, rank_emb[j].reshape(1, -1)).cpu().squeeze())
+        avg_sim.append(torch.stack(other_scores).mean())
+    return avg_sim
+
 
 ##### NQ datasets
 def get_dual_sample_pair(query_text, ctxs, labels):
@@ -63,6 +78,7 @@ def get_dual_sim(dataset, idx, retrival_model):
         c_emb = embs[1:]
         scores, rank_list, precendent_scores = get_precedent_sim(q_emb, c_emb)
         nb_scores = get_nb_sim(c_emb, rank_list)
+        all_doc_avg_scores = get_all_doc_avg_sim(c_emb, rank_list)
         ctxs = []
         for i in range(len(rank_list)):
             j = rank_list[i]
@@ -70,6 +86,7 @@ def get_dual_sim(dataset, idx, retrival_model):
             ctx['rerank_score'] = float(scores[j])
             ctx['rerank_nb_score'] = float(nb_scores[i])
             ctx['rerank_precedent_score'] = float(precendent_scores[i])
+            ctx['rerank_all_doc_avg_score'] = float(all_doc_avg_scores[i])
             ctxs.append(ctx)
         data['ctxs'] = ctxs
         dataset_new.append(data)
@@ -147,6 +164,7 @@ def get_dual_sim_hotpotqa(dataset, retrival_model):
         c_emb = embs[1:]
         scores, rank_list, precendent_scores = get_precedent_sim(q_emb, c_emb)
         nb_scores = get_nb_sim(c_emb, rank_list)
+        all_doc_avg_scores = get_all_doc_avg_sim(c_emb, rank_list)
         ctxs = []
         for i in range(len(rank_list)):
             j = rank_list[i]
@@ -154,7 +172,8 @@ def get_dual_sim_hotpotqa(dataset, retrival_model):
             rerank_score = float(scores[j])
             rerank_nb_score = float(nb_scores[i])
             rerank_precedent_score = float(precendent_scores[i])
-            ctx.append((rerank_score, rerank_nb_score, rerank_precedent_score))
+            rerank_all_doc_avg_score = float(all_doc_avg_scores[i])
+            ctx.append((rerank_score, rerank_nb_score, rerank_precedent_score, rerank_all_doc_avg_score))
             ctxs.append(ctx)
         data['context'] = ctxs
         dataset_new.append(data)
@@ -209,6 +228,7 @@ def get_dual_sim_musique(dataset, retrival_model):
         c_emb = embs[1:]
         scores, rank_list, precendent_scores = get_precedent_sim(q_emb, c_emb)
         nb_scores = get_nb_sim(c_emb, rank_list)
+        all_doc_avg_scores = get_all_doc_avg_sim(c_emb, rank_list)
         ctxs = []
         for i in range(len(rank_list)):
             j = rank_list[i]
@@ -216,6 +236,7 @@ def get_dual_sim_musique(dataset, retrival_model):
             ctx['rerank_score'] = float(scores[j])
             ctx['rerank_nb_score'] = float(nb_scores[i])
             ctx['rerank_precedent_score'] = float(precendent_scores[i])
+            ctx['rerank_all_doc_avg_score'] = float(all_doc_avg_scores[i])
             ctxs.append(ctx)
         data['paragraphs'] = ctxs
         dataset_new.append(data)

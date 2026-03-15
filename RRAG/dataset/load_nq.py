@@ -34,6 +34,9 @@ class Document:
     id: Optional[str] = None
     score: Optional[float] = None
     rerank_score: Optional[float] = None
+    rerank_nb_score: Optional[float] = None
+    rerank_precedent_score: Optional[float] = None
+    rerank_all_doc_avg_score: Optional[float] = None
     hasanswer: Optional[bool] = None
     isgold: Optional[bool] = None
     original_retrieval_index: Optional[int] = None
@@ -117,7 +120,12 @@ def get_instruction_dataset(dataset, idx, max_prompt_length, tokenizer, retrieva
 
 def get_embeds(dataset):
     for data in dataset:
-        data['embeds'] = [[float(d['rerank_score']), float(d['rerank_nb_score']), float(d['rerank_precedent_score'])] for d in data['ctxs']]
+        data['embeds'] = [[
+            float(d['rerank_score']),
+            float(d['rerank_nb_score']),
+            float(d['rerank_precedent_score']),
+            float(d.get('rerank_all_doc_avg_score', 0.0)),
+        ] for d in data['ctxs']]
         data['label'] = [1 if d['isgold'] else 0 for d in data['ctxs']]
     return dataset
 
@@ -145,5 +153,4 @@ def load_nq_dataset(input_path, max_prompt_length, tokenizer, retrieval_aware, u
 
 def get_nq_ans(dataset):
     return [data['answers'] for data in dataset]
-
 

@@ -52,7 +52,7 @@ class RRAGRunner:
         output_dir='',
 
         use_rrag=True,
-        input_dim=3,
+        input_dim=4,
         hidden_size=4096,
         RETRIEVAL_TOKEN='<R>',
         UNK_TOKEN='<unk>',
@@ -378,7 +378,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', type=str, required=False, help='Directory to save model')
 
     parser.add_argument('--use_rrag', action='store_true', help='Whether to use RRAG or not')
-    parser.add_argument('--input_dim', type=int, default=3, help='Input features')
+    parser.add_argument('--input_dim', type=int, default=4, help='Input features')
     parser.add_argument('--hidden_size', type=int, default=4096, help='Size of the LLM hidden layer')
     parser.add_argument('--RETRIEVAL_TOKEN', type=str, default='<R>', help='Token for retrieval')
     parser.add_argument('--UNK_TOKEN', type=str, default='<unk>', help='Token for unknown tokens')

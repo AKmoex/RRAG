@@ -88,7 +88,12 @@ def get_instruction_dataset(dataset, max_prompt_length, tokenizer, retrieval_awa
 def get_embeds(dataset):
     for data in dataset:
         supporting_facts = data['supporting_facts']
-        data['embeds'] = [[float(d['rerank_score']), float(d['rerank_nb_score']), float(d['rerank_precedent_score'])] for d in data['context']]
+        data['embeds'] = [[
+            float(d['rerank_score']),
+            float(d['rerank_nb_score']),
+            float(d['rerank_precedent_score']),
+            float(d.get('rerank_all_doc_avg_score', 0.0)),
+        ] for d in data['context']]
         data['label'] = [1 if d['title'] in supporting_facts else 0 for d in data['context']]
     return dataset
 
@@ -108,6 +113,7 @@ def pre_hotpotqa(dataset):
                 'rerank_score': float(d[2][0]),
                 'rerank_nb_score': float(d[2][1]),
                 'rerank_precedent_score': float(d[2][2]),
+                'rerank_all_doc_avg_score': float(d[2][3]) if len(d[2]) > 3 else 0.0,
                 'is_supporting': 1 if d[0] in supporting_facts else 0,
                 } 
             for d in data['context']]
@@ -143,5 +149,4 @@ def load_hotpotqa_dataset(input_path, max_prompt_length, tokenizer, retrieval_aw
 
 def get_hotpotqa_ans(dataset):
     return [[data['answer']] for data in dataset]
-
 

@@ -86,7 +86,12 @@ def get_instruction_dataset(dataset, max_prompt_length, tokenizer, retrieval_awa
 
 def get_embeds(dataset):
     for data in dataset:
-        data['embeds'] = [[float(d['rerank_score']), float(d['rerank_nb_score']), float(d['rerank_precedent_score'])] for d in data['paragraphs']]
+        data['embeds'] = [[
+            float(d['rerank_score']),
+            float(d['rerank_nb_score']),
+            float(d['rerank_precedent_score']),
+            float(d.get('rerank_all_doc_avg_score', 0.0)),
+        ] for d in data['paragraphs']]
         data['label'] = [1 if d['is_supporting'] else 0 for d in data['paragraphs']]
     return dataset
 
@@ -114,5 +119,4 @@ def load_musique_dataset(input_path, max_prompt_length, tokenizer, retrieval_awa
 
 def get_musique_ans(dataset):
     return [[data['answer']]+data['answer_aliases'] for data in dataset]
-
 
