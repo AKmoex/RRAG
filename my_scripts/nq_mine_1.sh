@@ -16,7 +16,6 @@ HF_ENDPOINT=https://hf-mirror.com python feature_extraction.py \
     --dataset_name nq_10 \
     --input_path 10_total_documents/nq-open-10_total_documents_gold_at_0.jsonl.gz \
     --save_path /hdd-data/rrag/mine_1/features/nq-open-10_total_documents_gold_at_0_bert.pkl \
-    --model_name google-bert/bert-base-uncased \
     --model_name /hdd-data/rrag/mine_1/retrievers/nq10_bert \
     --use_all_doc_avg_feature
 

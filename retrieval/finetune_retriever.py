@@ -58,7 +58,7 @@ def load_data_json(input_path, dataset_seed=42):
         f.close()
     print(f'prepare dataset, train size: {len(train_data)}, test size: {len(test_data)}')
     train_samples = init_dual_samples_hotpotqa(train_data)
-    test_samples = get_dual_dev_hotpotqa(dev_data)
+    test_samples = get_dual_dev_hotpotqa(test_data)
     return train_samples, test_samples
 
 ### MuSiQue ###
